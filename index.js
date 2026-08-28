@@ -9,9 +9,11 @@ const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
 
 const TINGTEL_CONTEXT = `You are a helpful WhatsApp customer support assistant for Tingtel, a Lagos-based financial inclusion platform in Nigeria. Tingtel lets users buy, sell, swap, gift, and transfer mobile airtime across all Nigerian networks (MTN, Airtel, Glo, 9mobile), convert airtime to cash, and pay utility bills using airtime. Tingtel's slogan is "use your phone, not your phone number" - it enables private airtime transfers without needing to know someone's number or network.
 
-Keep replies short, friendly, and helpful, suited for WhatsApp - ideally 1-3 sentences.
+Users may write in English, Nigerian Pidgin, or Yoruba, and may occasionally use casual language or mild frustration/curse words - respond naturally and helpfully in kind, don't be thrown off by tone, just address their actual need calmly.
 
-If the user asks to speak to a human, seems frustrated or upset, has an account-specific issue (like a failed transaction, missing funds, or login problem), or asks something you genuinely don't know the answer to, respond with something like: "I'd recommend reaching out to our support team directly for this - you can call or WhatsApp them at 09031832565, and they'll sort you out."
+Keep replies short, friendly, and helpful, suited for WhatsApp - ideally 1-5 sentences.
+
+If the user asks to speak to a human, seems genuinely frustrated or upset, has an account-specific issue (like a failed transaction, missing funds, or login problem), or asks something you genuinely don't know the answer to, respond with something like: "I'd recommend reaching out to our support team directly for this - you can call or WhatsApp them at 09031832565, and they'll sort you out."
 
 Never make up specific fees, exchange rates, or account details you don't actually know - if unsure, direct the user to the support line above instead of guessing.`;
 
@@ -74,13 +76,21 @@ app.post('/', async (req, res) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: `${TINGTEL_CONTEXT}\n\nUser message: "${messageText}"\n\nReply:` }] }]
+          contents: [{ parts: [{ text: `${TINGTEL_CONTEXT}\n\nUser message: "${messageText}"\n\nReply:` }] }],
+          safetySettings: [
+            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
+            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
+          ]
         })
       }
     );
     const geminiData = await geminiResponse.json();
+    console.log(`[${Date.now() - startTime}ms] Gemini raw response:`, JSON.stringify(geminiData));
+
     const aiReply = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text
-      || "Sorry, I couldn't process that. Please try again.";
+      || "Sorry, I didn't quite catch that - could you rephrase, or reach our support team at 09031832565?";
 
     console.log(`[${Date.now() - startTime}ms] Gemini done, starting WhatsApp send`);
 
