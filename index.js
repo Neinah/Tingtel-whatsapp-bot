@@ -15,6 +15,22 @@ If the user asks to speak to a human, seems frustrated or upset, has an account-
 
 Never make up specific fees, exchange rates, or account details you don't actually know - if unsure, direct the user to the support line above instead of guessing.`;
 
+async function showTypingIndicator(phoneNumberId, messageId) {
+  await fetch(`https://graph.facebook.com/v23.0/${phoneNumberId}/messages`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      messaging_product: 'whatsapp',
+      status: 'read',
+      message_id: messageId,
+      typing_indicator: { type: 'text' }
+    })
+  });
+}
+
 app.get('/', (req, res) => {
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
@@ -30,6 +46,7 @@ app.get('/', (req, res) => {
 
 app.post('/', async (req, res) => {
   res.sendStatus(200);
+  const startTime = Date.now();
 
   try {
     const entry = req.body?.entry?.[0];
@@ -42,8 +59,14 @@ app.post('/', async (req, res) => {
     const senderNumber = message.from;
     const messageText = message.text?.body || "";
     const phoneNumberId = value.metadata.phone_number_id;
+    const incomingMessageId = message.id;
 
     if (!messageText) return;
+
+    console.log(`[${Date.now() - startTime}ms] Showing typing indicator`);
+    await showTypingIndicator(phoneNumberId, incomingMessageId);
+
+    console.log(`[${Date.now() - startTime}ms] Starting Gemini call`);
 
     const geminiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${GEMINI_API_KEY}`,
@@ -59,6 +82,8 @@ app.post('/', async (req, res) => {
     const aiReply = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text
       || "Sorry, I couldn't process that. Please try again.";
 
+    console.log(`[${Date.now() - startTime}ms] Gemini done, starting WhatsApp send`);
+
     await fetch(`https://graph.facebook.com/v23.0/${phoneNumberId}/messages`, {
       method: 'POST',
       headers: {
@@ -73,7 +98,7 @@ app.post('/', async (req, res) => {
       })
     });
 
-    console.log(`Replied to ${senderNumber}: ${aiReply}`);
+    console.log(`[${Date.now() - startTime}ms] Done - Replied to ${senderNumber}: ${aiReply}`);
   } catch (err) {
     console.error('Error handling message:', err);
   }
