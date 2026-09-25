@@ -2,7 +2,6 @@ const express = require('express');
 const app = express();
 app.use(express.json());
 
-// Allow requests from any website (needed for the chat widget to work on other sites)
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -14,6 +13,8 @@ app.use((req, res, next) => {
 });
 
 app.use(express.static('public'));
+
+app.get('/', (req, res) => res.send('OK'));
 
 const whatsappRoutes = require('./whatsapp');
 const chatRoutes = require('./chat');
