@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tingtel Chat</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, sans-serif; height: 100vh; display: flex; flex-direction: column; }
+  #header { background: #E8262A; color: white; padding: 16px; display: flex; align-items: center; gap: 10px; }
+  #header img { width: 28px; height: 28px; border-radius: 50%; background: white; padding: 3px; }
+  #header span { font-weight: 600; font-size: 15px; }
+  #home { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; gap: 16px; }
+  #home img { width: 72px; height: 72px; object-fit: contain; }
+  #home p { font-size: 15px; color: #333; }
+  #messages { flex: 1; overflow-y: auto; padding: 14px; display: none; flex-direction: column; gap: 10px; }
+  .row { display: flex; align-items: flex-end; gap: 8px; }
+  .row.user { justify-content: flex-end; }
+  .avatar { width: 26px; height: 26px; border-radius: 50%; background: white; border: 1px solid #eee; padding: 3px; flex-shrink: 0; }
+  .msg { max-width: 75%; padding: 10px 14px; border-radius: 14px; font-size: 13.5px; line-height: 1.45; }
+  .msg.bot { background: #f4f4f6; color: #222; border-bottom-left-radius: 4px; }
+  .msg.user { background: #E8262A; color: white; border-bottom-right-radius: 4px; }
+  .typing { display: flex; gap: 4px; padding: 12px 14px; background: #f4f4f6; border-radius: 14px; border-bottom-left-radius: 4px; width: fit-content; }
+  .typing span { width: 6px; height: 6px; border-radius: 50%; background: #999; animation: bounce 1.2s infinite ease-in-out; }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
+  #inputRow { display: flex; border-top: 1px solid #e5e7eb; padding: 8px; gap: 8px; }
+  #input { flex: 1; border: 1px solid #e0e0e0; border-radius: 20px; padding: 10px 16px; font-size: 13.5px; outline: none; }
+  #input:focus { border-color: #E8262A; }
+  #send { background: #E8262A; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
+</style>
+</head>
+<body>
+  <div id="header">
+    <img src="https://tingtel-whatsapp-bot.onrender.com/logo.png" alt="Tingtel" />
+    <span>Tingtel AI Assistant</span>
+  </div>
+  <div id="home">
+    <img src="https://tingtel-whatsapp-bot.onrender.com/logo.png" alt="Tingtel" />
+    <p>Hello! How can I help you today?</p>
+  </div>
+  <div id="messages"></div>
+  <div id="inputRow">
+    <input id="input" type="text" placeholder="Type a message..." />
+    <button id="send">&#10148;</button>
+  </div>
+
+<script>
+  const CHAT_ENDPOINT = 'https://tingtel-whatsapp-bot.onrender.com/chat';
+  const LOGO_URL = 'https://tingtel-whatsapp-bot.onrender.com/logo.png';
+  const homeEl = document.getElementById('home');
+  const messagesEl = document.getElementById('messages');
+  const inputEl = document.getElementById('input');
+  const sendBtn = document.getElementById('send');
+  let started = false;
+
+  function addMessage(text, sender) {
+    const row = document.createElement('div');
+    row.className = `row ${sender}`;
+    if (sender === 'bot') {
+      row.innerHTML = `<img class="avatar" src="${LOGO_URL}" alt="" /><div class="msg bot"></div>`;
+    } else {
+      row.innerHTML = `<div class="msg user"></div>`;
+    }
+    row.querySelector('.msg').textContent = text;
+    messagesEl.appendChild(row);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function showTyping() {
+    const row = document.createElement('div');
+    row.className = 'row bot';
+    row.id = 'typingRow';
+    row.innerHTML = `<img class="avatar" src="${LOGO_URL}" alt="" /><div class="typing"><span></span><span></span><span></span></div>`;
+    messagesEl.appendChild(row);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function hideTyping() {
+    const row = document.getElementById('typingRow');
+    if (row) row.remove();
+  }
+
+  async function sendMessage() {
+    const text = inputEl.value.trim();
+    if (!text) return;
+    if (!started) {
+      started = true;
+      homeEl.style.display = 'none';
+      messagesEl.style.display = 'flex';
+    }
+    addMessage(text, 'user');
+    inputEl.value = '';
+    showTyping();
+    try {
+      const response = await fetch(CHAT_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text })
+      });
+      const data = await response.json();
+      hideTyping();
+      addMessage(data.reply || "Sorry, something went wrong.", 'bot');
+    } catch (err) {
+      hideTyping();
+      addMessage("Sorry, I couldn't connect. Please try again.", 'bot');
+    }
+  }
+
+  sendBtn.addEventListener('click', sendMessage);
+  inputEl.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+</script>
+</body>
+</html>
