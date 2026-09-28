@@ -3,6 +3,17 @@
   const LOGO_URL = 'https://tingtel-whatsapp-bot.onrender.com/logo.png';
   const PRIMARY_RED = '#E8262A';
 
+  function makeSessionId() {
+    let id = null;
+    try { id = localStorage.getItem('tingtel_session'); } catch (e) {}
+    if (!id) {
+      id = 'w' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      try { localStorage.setItem('tingtel_session', id); } catch (e) {}
+    }
+    return id;
+  }
+  const SESSION_ID = makeSessionId();
+
   const style = document.createElement('style');
   style.textContent = `
     #tingtel-bubble {
@@ -155,7 +166,7 @@
       const response = await fetch(CHAT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text })
+        body: JSON.stringify({ message: text, sessionId: SESSION_ID })
       });
       const data = await response.json();
       hideTyping();
