@@ -2,22 +2,29 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Tingtel Chat</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, sans-serif; height: 100vh; display: flex; flex-direction: column; }
-  #header { background: #E8262A; color: white; padding: 16px; display: flex; align-items: center; gap: 10px; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, sans-serif;
+    height: 100vh;
+    height: 100dvh;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  #header { background: #E8262A; color: white; padding: 16px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
   #header img { width: 28px; height: 28px; border-radius: 50%; background: white; padding: 3px; }
   #header span { font-weight: 600; font-size: 15px; }
-  #home { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; gap: 16px; }
+  #home { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; gap: 16px; }
   #home img { width: 72px; height: 72px; object-fit: contain; }
   #home p { font-size: 15px; color: #333; }
-  #messages { flex: 1; overflow-y: auto; padding: 14px; display: none; flex-direction: column; gap: 10px; }
+  #messages { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 14px; display: none; flex-direction: column; gap: 10px; }
   .row { display: flex; align-items: flex-end; gap: 8px; }
   .row.user { justify-content: flex-end; }
   .avatar { width: 26px; height: 26px; border-radius: 50%; background: white; border: 1px solid #eee; padding: 3px; flex-shrink: 0; }
-  .msg { max-width: 75%; padding: 10px 14px; border-radius: 14px; font-size: 13.5px; line-height: 1.45; }
+  .msg { max-width: 80%; padding: 10px 14px; border-radius: 14px; font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }
   .msg.bot { background: #f4f4f6; color: #222; border-bottom-left-radius: 4px; }
   .msg.user { background: #E8262A; color: white; border-bottom-right-radius: 4px; }
   .typing { display: flex; gap: 4px; padding: 12px 14px; background: #f4f4f6; border-radius: 14px; border-bottom-left-radius: 4px; width: fit-content; }
@@ -25,10 +32,18 @@
   .typing span:nth-child(2) { animation-delay: 0.2s; }
   .typing span:nth-child(3) { animation-delay: 0.4s; }
   @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
-  #inputRow { display: flex; border-top: 1px solid #e5e7eb; padding: 8px; gap: 8px; }
-  #input { flex: 1; border: 1px solid #e0e0e0; border-radius: 20px; padding: 10px 16px; font-size: 13.5px; outline: none; }
+  #inputRow {
+    display: flex; border-top: 1px solid #e5e7eb; gap: 8px; flex-shrink: 0;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+  /* 16px stops iPhones from zooming in when the box is tapped */
+  #input { flex: 1; min-width: 0; border: 1px solid #e0e0e0; border-radius: 22px; padding: 10px 16px; font-size: 16px; outline: none; }
   #input:focus { border-color: #E8262A; }
-  #send { background: #E8262A; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
+  #send { background: #E8262A; color: white; border: none; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
+  @media (max-width: 480px) {
+    #header { padding: 14px; }
+    .msg { max-width: 85%; }
+  }
 </style>
 </head>
 <body>
