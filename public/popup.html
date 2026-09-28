@@ -55,6 +55,17 @@
   const sendBtn = document.getElementById('send');
   let started = false;
 
+  function makeSessionId() {
+    let id = null;
+    try { id = localStorage.getItem('tingtel_session'); } catch (e) {}
+    if (!id) {
+      id = 'p' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      try { localStorage.setItem('tingtel_session', id); } catch (e) {}
+    }
+    return id;
+  }
+  const SESSION_ID = makeSessionId();
+
   function addMessage(text, sender) {
     const row = document.createElement('div');
     row.className = `row ${sender}`;
@@ -97,7 +108,7 @@
       const response = await fetch(CHAT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text })
+        body: JSON.stringify({ message: text, sessionId: SESSION_ID })
       });
       const data = await response.json();
       hideTyping();
